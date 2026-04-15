@@ -2,7 +2,7 @@ package com.anbima.desafio.pedido_gateway.service;
 
 import com.anbima.desafio.pedido_gateway.entity.Pedido;
 import com.anbima.desafio.pedido_gateway.repository.PedidoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.rabbitmq.client.Return;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -10,8 +10,7 @@ public class PedidoService {
 
     private PedidoRepository repository;
 
-    // Troca void por Pedido
-    public void tratamentoEntrada(String linha) {
+    public Pedido tratamentoEntrada(String linha) {
 
         if (linha == null || linha.length() != 40) {
             throw new RuntimeException("A entrada deve ter exatamente 40 caracteres.");
@@ -36,8 +35,15 @@ public class PedidoService {
 
         // Transformar a 'String' em um Objeto do tipo Pedido
 
-        //Pedido pedido = Pedido.builder().
+        Pedido pedido = Pedido.builder().
+                tipoLanche(tipoLache).proteina(proteina).
+                acompanhamento(acompanhamento).
+                quantidade(quantidade).
+                bebida(bebida).status("RECEBIDO").
+                build();
 
+        
+        return repository.save(pedido);
     }
 
     private boolean calcularPreco(Pedido pedido){

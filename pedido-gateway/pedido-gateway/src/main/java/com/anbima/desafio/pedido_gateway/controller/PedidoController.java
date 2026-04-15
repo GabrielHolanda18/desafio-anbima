@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PedidoController {
 
     private final PedidoService pedidoService;
-    /*
+
     @PostMapping(value = "/posicional", consumes = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<Pedido> recebePedido(@RequestBody String linha){
 
@@ -28,11 +28,5 @@ public class PedidoController {
         // Retornamos o status 201 (Created) e o pedido no corpo da resposta
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoSalvo);
 
-
-        pedidoService.tratamentoEntrada(linha);
-        return RequestEntity.ok().Build();
-
-
     }
-    */
 }
