@@ -79,9 +79,9 @@ public class PedidoService {
 
         if (pedido.getTipoLanche().equals("HAMBURGUER")) {
              precoBase = new BigDecimal("20.00");
-        } else if (pedido.getProteina().equals("CARNE")) {
+        } else if (pedido.getTipoLanche().equals("PASTEL")) {
             precoBase = new BigDecimal("15.00");
-        } else precoBase = new BigDecimal("12.00");
+        } else {precoBase = new BigDecimal("12.00");}
 
         // Calculo do valor Total
 
