@@ -1,10 +1,14 @@
 package com.anbima.desafio.pedido_processor.service;
 
+import com.anbima.desafio.pedido_processor.entity.Pedido;
 import com.anbima.desafio.pedido_processor.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -26,6 +30,14 @@ public class PedidoService {
 
             log.info("Pedido {} atualizado para ENTREGUE.", pedidoId);}
                 ,() -> log.error("Pedido ID {} não encontrado no banco de dados!", pedidoId));
+    }
+
+    public List<Pedido> listarTodos() {
+        return pedidoRepository.findAll();
+    }
+
+    public Optional<Pedido> buscarPorId(Long id) {
+        return pedidoRepository.findById(id);
     }
 }
 
