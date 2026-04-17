@@ -1,54 +1,69 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PedidoService } from './pedido.service';
-import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule,RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  imports: [CommonModule, FormsModule],
+  templateUrl: './app.html'
 })
-export class App implements OnInit{
-  protected readonly title = signal('pedido-frontend');
+export class App implements OnInit {
+  telaAtual: string = 'novo'; // Controla se estamos na tela 'novo' ou 'lista'
 
-  // Variaveis do Pedido
+  // Campo do Textarea
+  linhaPosicional: string = '';
 
-  tipoLanche = '';
-  proteina = '';
-  acompanhamento = '';
-  quantidade = 1;
-  bebida = '';
-
+  // Dados da Tabela e Filtro
   pedidos: any[] = [];
+  pedidosFiltrados: any[] = [];
+  filtroStatus: string = 'TODOS';
 
-  // Injetando o Service
   constructor(private pedidoService: PedidoService) {}
 
   ngOnInit() {
     this.atualizarTabela();
   }
 
-  enviar() {
-    // Gera a string de 40 caracteres
-    const linha = this.pedidoService.formatarPosicional(
-      this.lanche, this.proteina, this.acompanhamento, this.quantidade, this.bebida
-    );
+  mudarTela(tela: string) {
+    this.telaAtual = tela;
+    if (tela === 'lista') {
+      this.atualizarTabela();
+    }
+  }
 
-    this.pedidoService.enviarPedido(linha).subscribe({
-      next: () => {
-        alert('Pedido enviado com sucesso!');
-        this.atualizarTabela(); // Atualiza a lista após enviar
+  enviar() {
+    if (this.linhaPosicional.length !== 40) {
+      alert(`Erro: A linha deve ter exatamente 40 caracteres. Atualmente tem ${this.linhaPosicional.length}.`);
+      return;
+    }
+
+    this.pedidoService.enviarPedido(this.linhaPosicional).subscribe({
+      next: (resposta) => {
+        alert('Pedido enviado com sucesso para o Módulo A!');
+        this.linhaPosicional = ''; // Limpa o textarea
+        this.mudarTela('lista'); // Pula automaticamente para a tela da tabela
       },
-      error: (err) => alert('Erro ao enviar: ' + err.message)
+      error: (err) => alert('Erro ao enviar pedido: ' + err.message)
     });
   }
 
   atualizarTabela() {
-    this.pedidoService.listarTodos().subscribe(data => {
-      this.pedidos = data;
+    this.pedidoService.listarTodos().subscribe({
+      next: (dados) => {
+        this.pedidos = dados;
+        this.filtrarPedidos(); // Aplica o filtro assim que os dados chegam
+      },
+      error: (err) => console.error('Erro ao buscar pedidos', err)
     });
+  }
+
+  filtrarPedidos() {
+    if (this.filtroStatus === 'TODOS') {
+      this.pedidosFiltrados = [...this.pedidos];
+    } else {
+      this.pedidosFiltrados = this.pedidos.filter(p => p.status === this.filtroStatus);
+    }
   }
 }

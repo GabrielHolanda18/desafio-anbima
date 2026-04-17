@@ -24,6 +24,9 @@ public class PedidoListener {
             JsonNode jsonNode = objectMapper.readTree(mensagem);
             Long id = jsonNode.get("pedidoId").asLong();
 
+            // Adicionei um tempo de 10 s para conseguir ver o Status de Recebido no Frontend
+            Thread.sleep(10000);
+
             pedidoService.processarPedido(id);
         }  catch (Exception e) {
             log.error("Erro ao fazer o parsing do JSON: {}", e.getMessage());
