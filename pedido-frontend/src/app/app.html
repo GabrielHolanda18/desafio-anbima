@@ -16,14 +16,14 @@
 
   <div *ngIf="telaAtual === 'novo'" class="card shadow-sm">
     <div class="card-body">
-      <h5 class="card-title mb-3">Colar Linha Posicional</h5>
+      <h5 class="card-title mb-3">Pedido Linha Posicional</h5>
       <p class="text-muted small">Cole a string de 40 caracteres exatos abaixo:</p>
 
       <textarea
         class="form-control text-monospace mb-3"
         rows="3"
         [(ngModel)]="linhaPosicional"
-        placeholder="Ex:HAMBURGUERCARNE     SALADA    02COCA    "
+        placeholder="Exemplos:&#10;HAMBURGUER CARNE     SALADA    02   COCA&#10;PASTEL   CARNE     FRITAS    02    COCA"
         style="font-family: monospace;">
       </textarea>
 

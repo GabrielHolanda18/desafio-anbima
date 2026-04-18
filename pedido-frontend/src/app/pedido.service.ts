@@ -16,7 +16,7 @@ export class PedidoService {
     return this.http.post(this.urlModuloA, linhaPosicional, { responseType: 'text' });
   }
 
-  // Busca do Processor (que tem o Banco de Dados com Valor, Lanche, etc)
+  // Busca do Processor no bd as info dos pedidos
   listarTodos(): Observable<any[]> {
     return this.http.get<any[]>(this.urlModuloB);
   }
