@@ -19,6 +19,8 @@ services:
       - rabbitmq
     environment:
       - SPRING_RABBITMQ_HOST=rabbitmq
+    volumes:
+      - ./data:/data
 
   # 3. Back-end: Gateway (Módulo A)
   modulo-a:
@@ -30,6 +32,8 @@ services:
       - rabbitmq
     environment:
       - SPRING_RABBITMQ_HOST=rabbitmq
+    volumes:
+      - ./data:/data
 
   # 4. Front-end: Angular (NGINX)
   frontend:
