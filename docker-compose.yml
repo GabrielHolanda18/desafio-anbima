@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # 1. Mensageria (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # 2. Back-end: Processador (Módulo B)
+  modulo-b:
+    build: ./pedido-processor
+    container_name: modulo-b-processor
+    ports:
+      - "8081:8081"
+    depends_on:
+      - rabbitmq
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+
+  # 3. Back-end: Gateway (Módulo A)
+  modulo-a:
+    build: ./pedido-gateway
+    container_name: modulo-a-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+
+  # 4. Front-end: Angular (NGINX)
+  frontend:
+    build: ./pedido-frontend
+    container_name: pedido-frontend-app
+    ports:
+      - "4200:80"
+    depends_on:
+      - modulo-a

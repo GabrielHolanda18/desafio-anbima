@@ -68,14 +68,13 @@ export class App implements OnInit {
       junta o final["02COCA"] ou ["2", "COCA"], nós juntamos tudo.
       */
       let resto = partes.slice(3).join("");
-
       //console.log("Resto: " + resto);
+
       // QTD: Pega os 2 primeiros caracteres do que sobrou que no caso deve ser numero
       let qtdOriginal = resto.replace(/\D/g, '').substring(0, 2);
-
       //console.log("Como esta: " + qtdOriginal);
-      const qtd = qtdOriginal.padStart(2, '0');
 
+      const qtd = qtdOriginal.padStart(2, '0');
       //console.log("Como ficou: " + qtd);
 
       //Pega a bebida escolhida
@@ -86,6 +85,14 @@ export class App implements OnInit {
 
       //console.log("Bebida tratada: " + bebida);
       const stringFinal = lanche + proteina + acompanhamento + qtd + bebida;
+
+      // Verifica se tem numeros no espaço 30 a 32
+      const verQuantidade = stringFinal.substring(30, 32);
+      if (!/^\d+$/.test(verQuantidade) || verQuantidade === '00') {
+        alert("Erro de formatação: A quantidade não foi encontrada na posição correta. " +
+          "Verifique os espaços entre lanche e proteína!");
+        return;
+      }
 
       this.processarEnvio(stringFinal);
     } else {
