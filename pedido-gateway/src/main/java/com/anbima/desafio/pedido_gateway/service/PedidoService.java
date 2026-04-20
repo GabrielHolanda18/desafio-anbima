@@ -36,12 +36,9 @@ public class PedidoService {
         // Caso a String venha da Requisição via API
         if (partes.length >= 4) {
             //Recorta a entrada nos tipos e preenche com espaço a direita se for menor que 10
-            tipoLanche = StringUtils.rightPad(StringUtils.substring(partes[0], 0, 10), 10, " ")
-                    .trim();
-            proteina = StringUtils.rightPad(StringUtils.substring(partes[1], 0, 10), 10, " ")
-                    .trim();
-            acompanhamento = StringUtils.rightPad(StringUtils.substring(partes[2], 0, 10), 10, " ")
-                    .trim();
+            tipoLanche = StringUtils.rightPad(StringUtils.substring(partes[0], 0, 10), 10, " ");
+            proteina = StringUtils.rightPad(StringUtils.substring(partes[1], 0, 10), 10, " ");
+            acompanhamento = StringUtils.rightPad(StringUtils.substring(partes[2], 0, 10), 10, " ");
 
             // Pega a quantidade + bebida e junta ["02", "COCA"] para ["02COCA"]
             StringBuilder restoBuilder = new StringBuilder();
@@ -74,31 +71,36 @@ public class PedidoService {
             String bebidaOriginal = resto.replaceFirst(qtdOriginal, "");
 
             // Corta no máximo em 8 e preenche com espaços à direita
-            bebida = StringUtils.rightPad(StringUtils.substring(bebidaOriginal, 0, 8), 8, " ")
-                    .trim();
+            bebida = StringUtils.rightPad(StringUtils.substring(bebidaOriginal, 0, 8), 8, " ");
         } else {
 
             // Caso a String venha do Front end já formatada
 
-            tipoLanche = linha.substring(0, 10).trim().toUpperCase(); // 1 a 10
-            proteina = linha.substring(10, 20).trim().toUpperCase(); // 11 a 20
-            acompanhamento = linha.substring(20, 30).trim().toUpperCase(); // 21 a 30
+            tipoLanche = linha.substring(0, 10); // 1 a 10
+            proteina = linha.substring(10, 20); // 11 a 20
+            acompanhamento = linha.substring(20, 30); // 21 a 30
 
             // Verificar se a quantidade veio em forma de numérica
-            String quantidadeStr = linha.substring(30, 32).trim().toUpperCase(); // 31 a 32
+            String quantidadeStr = linha.substring(30, 32); // 31 a 32
             if (!quantidadeStr.matches("\\d{2}")) {
                 throw new RuntimeException("Entrada deve ser numérica (01 até 99)");
             }
             // Transformar quantidade em Inteiro
             quantidade = Integer.parseInt(quantidadeStr);
 
-            bebida = linha.substring(32, 40).trim().toUpperCase(); // 33 a 40
+            bebida = linha.substring(32, 40); // 33 a 40
 
 
         }
 
-        // Transformar a 'String' em um Objeto do tipo Pedido
 
+        tipoLanche = tipoLanche.toUpperCase();
+        proteina = proteina.toUpperCase();
+        acompanhamento = acompanhamento.toUpperCase();
+        bebida = bebida.toUpperCase();
+
+
+        // Transformar a 'String' em um Objeto do tipo Pedido
         Pedido pedido = Pedido.builder().
                 tipoLanche(tipoLanche).proteina(proteina).
                 acompanhamento(acompanhamento).
@@ -131,13 +133,13 @@ public class PedidoService {
     Se for HAMBURGUER + CARNE + SALADA → Aplicar 10% de desconto
     valorTotal = precoBase * quantidade - desconto
      */
-    private BigDecimal calcularPreco(Pedido pedido){
+    BigDecimal calcularPreco(Pedido pedido){
 
         BigDecimal precoBase;
 
-        if (pedido.getTipoLanche().equals("HAMBURGUER")) {
+        if (pedido.getTipoLanche().trim().equalsIgnoreCase("HAMBURGUER")) {
              precoBase = new BigDecimal("20.00");
-        } else if (pedido.getTipoLanche().equals("PASTEL")) {
+        } else if (pedido.getTipoLanche().trim().equalsIgnoreCase("PASTEL")) {
             precoBase = new BigDecimal("15.00");
         } else {precoBase = new BigDecimal("12.00");}
 
@@ -154,8 +156,8 @@ public class PedidoService {
     }
 
     private boolean comboHamburger(Pedido pedido){
-        return pedido.getTipoLanche().equals("HAMBURGUER") &&
-                pedido.getProteina().equals("CARNE") &&
-                pedido.getAcompanhamento().equals("SALADA");
+        return pedido.getTipoLanche().trim().equalsIgnoreCase("HAMBURGUER") &&
+                pedido.getProteina().trim().equalsIgnoreCase("CARNE") &&
+                pedido.getAcompanhamento().trim().equalsIgnoreCase("SALADA");
     }
 }
