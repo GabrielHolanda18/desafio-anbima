@@ -105,7 +105,7 @@ npm run start
 
 1. Pré-requisitos Docker e Docker Compose instalados.
 
-**Postas são as mesmas das de cima**
+**Portas são as mesmas das de cima**
 
 ### Execução via Docker Compose
 
