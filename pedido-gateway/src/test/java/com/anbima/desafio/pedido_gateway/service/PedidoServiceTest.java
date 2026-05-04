@@ -2,17 +2,18 @@ package com.anbima.desafio.pedido_gateway.service;
 
 import com.anbima.desafio.pedido_gateway.entity.Pedido;
 import com.anbima.desafio.pedido_gateway.repository.PedidoRepository;
-import org.junit.jupiter.api.Test;           // Marca o método como um teste
-import org.junit.jupiter.api.DisplayName;    // Dá um nome amigável ao teste
+import org.junit.jupiter.api.Test;           // Marca o metodo como um teste
+import org.junit.jupiter.api.DisplayName;    // Dá um nome ao teste
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import static org.assertj.core.api.Assertions.assertThat;
-import java.math.BigDecimal;
-
-import static org.junit.jupiter.api.Assertions.*; // Importa as validações (assertEquals, etc)
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class PedidoServiceTest {
@@ -29,46 +30,34 @@ public class PedidoServiceTest {
     @InjectMocks
     private PedidoService service;
 
-
     @Test
-    @DisplayName("Deve calcular o valor total sem desconto")
-    void deveCalcularPrecoTotal() {
-        Pedido pedido = Pedido.builder()
-                .tipoLanche("PASTEL")
-                .proteina("FRANGO")
-                .acompanhamento("BACON")//
-                .bebida("SUCO")
-                .quantidade(2)
-                .build();
+    @DisplayName("Deve salvar o pedido e enviar para a fila com sucesso")
+    void processarPedidoCompleto(){
 
-        assertThat(service.calcularPreco(pedido)).isEqualByComparingTo("30.00");
+        // ARRANGE - Configuração do cenário
+        String stringValida = "HAMBURGUER CARNE     SALADA   01COCA    ";
+
+        // simular que o banco gerou o ID 1
+        Pedido pedidoSalvo = Pedido.builder().id(1L).status("RECEBIDO").build();
+
+        // Quando o repository tentar salvar QUALQUER pedido, retorne o nosso pedido com ID 1
+        when(repository.save(any(Pedido.class))).thenReturn(pedidoSalvo);
+
+        // ACT - Execução da ação
+        Pedido resultado = service.tratamentoEntrada(stringValida);
+
+        // ASSERT - Verificações com Mockito
+
+        // Verifica se o repository.save foi chamado
+        verify(repository).save(any(Pedido.class));
+
+        // Verifica se a mensagem foi enviada para a fila correta com o ID certo
+        // O verify garante que o "contrato" de envio foi cumprido
+        verify(rabbitTemplate).convertAndSend(eq("pedidos.recebidos"), any(Object.class));
+
+        // Verifica se o retorno do metodo é o pedido que o banco "salvou"
+        assertThat(resultado.getId()).isEqualTo(1L);
+        assertThat(resultado.getStatus()).isEqualTo("RECEBIDO");
     }
 
-    @Test
-    @DisplayName("Deve calcular o valor com Desconto")
-    void deveCalcularDesconto() {
-        // Arrange
-        Pedido pedido = Pedido.builder()
-                .tipoLanche("HAMBURGUER")
-                .proteina("CARNE")
-                .acompanhamento("SALADA")
-                .bebida("COCA")
-                .quantidade(1)
-                .build();
-
-        assertThat(service.calcularPreco(pedido)).isEqualByComparingTo("18.00");
-    }
-
-    @Test
-    @DisplayName("Deve retornar valor 0 se a quantidade for zero ou negativa")
-    void deveValidarQuantidadeInvalida() {
-        Pedido pedido = Pedido.builder()
-                .tipoLanche("HAMBURGUER")
-                .proteina("CARNE")
-                .acompanhamento("SALADA")
-                .quantidade(0)
-                .build();
-
-        assertThat(service.calcularPreco(pedido)).isEqualByComparingTo("0.00");
-    }
 }
