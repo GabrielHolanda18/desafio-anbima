@@ -115,7 +115,7 @@ npm run start
 docker-compose up -d --build
 ```
 
-2. Acompanhe o processamento em tempo real pelos logs:**
+2. Acompanhe o processamento em tempo real pelos logs:
 
 ```
 docker logs -f modulo-b-processor
