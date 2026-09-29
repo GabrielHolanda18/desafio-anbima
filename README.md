@@ -1,125 +1,335 @@
-# 🍔 Sistema de Gestão de Pedidos 
+# 🍔 Sistema de Gestão de Pedidos
 
-Projeto desenvolvido para o processo seletivo de Estágio. 
-* O objetivo principal é implementar um mini-sistema de Pedidos de Lanche que processa entradas de dados baseadas em uma string posicional fixa de 40 caracteres.
+Projeto desenvolvido para um processo seletivo de estágio.
 
----
+O sistema recebe pedidos de lanche em uma **string posicional de 40 caracteres**, calcula o valor conforme as regras de negócio e processa a entrega de forma assíncrona com RabbitMQ.
 
 ## 🚀 Tecnologias
-* **Java 21** 
-* **Spring Boot 4.0.5**
-* **RabbitMQ** 
-* **Angular 21**
-* **JPA + Hibernate**
-* **H2 Database** 
-* **JUnit 5 & AssertJ** (Back-end Tests)
-* **Lombok**
 
----
+- Java 21
+- Spring Boot 4.0.5
+- RabbitMQ
+- Angular 21
+- Spring Data JPA + Hibernate
+- H2 Database
+- JUnit 5 + AssertJ
+- Lombok
+- Docker e Docker Compose
 
-## Editor / IDE
+IDE utilizada: **IntelliJ IDEA**.
 
-* **IntelliJ IDEA** 
+## 🏗️ Arquitetura
 
----
+O projeto possui dois módulos backend e uma interface Angular:
 
-## 🏗️ Arquitetura do Sistema
-O sistema utiliza uma comunicação desacoplada para garantir que o processamento de entrega não trave a interface do usuário:
+| Componente | Responsabilidade | Porta |
+|---|---|---|
+| `pedido-frontend` | Enviar pedidos e consultar a listagem | `4200` |
+| `pedido-gateway` | Interpretar a entrada, calcular o valor, salvar e publicar na fila | `8080` |
+| `pedido-processor` | Consumir mensagens, atualizar o status e disponibilizar consultas | `8081` |
 
-* ✅ **Frontend**: Trata-se de uma interface simples que interage com os módulos backend. Possui uma tela para o usuário enviar a string posicional (simulando a criação do pedido) e uma tabela para listar os pedidos realizados, acompanhada de opções de filtro e recarregamento
+### Fluxo do pedido
 
+1. O frontend envia uma linha posicional ao Gateway.
+2. O Gateway verifica o comprimento, extrai os campos e calcula o valor.
+3. O pedido é salvo com status `RECEBIDO`.
+4. O Gateway publica uma mensagem na fila `pedidos.recebidos`:
 
+   ```json
+   {
+     "pedidoId": 1
+   }
+   ```
 
-* ✅ **Módulo A (Entrada/Gateway)**: É a porta de entrada da aplicação. Ele recebe a string do pedido, realiza validações rigorosas de tamanho e formato, converte a string em um objeto, calcula o valor financeiro do pedido com base em regras de preços e descontos, salva no banco de dados com o status RECEBIDO e publica uma mensagem em uma fila para dar continuidade ao fluxo
+5. O Processor consome a mensagem e atualiza o pedido correspondente para `ENTREGUE`.
+6. O frontend consulta a API do Processor para exibir os pedidos.
 
+O processamento pela fila é assíncrono. Por isso, o pedido pode já aparecer como `ENTREGUE` na primeira consulta.
 
+## ⚙️ Execução com Docker
 
-* ✅ **Módulo B (Processor)**: Trabalha de forma assíncrona possuindo um Listener que consome as mensagens da fila enviadas pelo Módulo A. Ao receber uma mensagem, ele atualiza o status do respectivo pedido no banco de dados para ENTREGUE. Este módulo também disponibiliza os endpoints de consulta (GET /pedidos) para listar os pedidos
+### Pré-requisitos
 
----
+- Docker instalado e em execução.
+- Docker Compose disponível.
 
-## 📸 Screenshots
+### Iniciar a aplicação
 
-### Tela Principal (Lista de Pedidos)
-<p align="center">
-  <img src="./docs/main.png" alt="Main Page" width="100%">
-</p>
+Clone o repositório:
 
-### Status do Processamento (Módulo A) -> Recebido
-<p align="center">
-  <img src="./docs/pedidoRecebido.png" alt="Form Page" width="100%">
-</p>
-
-### Status do Processamento (Módulo B) -> Entregue
-<p align="center">
-  <img src="./docs/pedidoEntregue.png" alt="View Page" width="100%">
-</p>
-
-## ⚙️ Como Executar Localmente
-
-
-É necessário ter o Java 25 e o Maven instalados e configurados.
-
-### Executando o Back-end
-
-* Abra o projeto raiz na sua IDE (IntelliJ IDEA recomendada).
-
-* Importe os projetos como Maven Projects.
-
-* Execute a classe principal do `Módulo A` (PedidoGatewayApplication).
-
-* Execute a classe principal do `Módulo B` (PedidoProcessorApplication).
-
-### Executando o Front-end (Angular)
-   
-* É necessário ter o Node.js instalado localmente.
-
-
-1. Navegue até a pasta do projeto Angular:
-
+```bash
+git clone https://github.com/GabrielHolanda18/desafio-anbima.git
+cd desafio-anbima
 ```
-cd frontend-pedido
-```
-2. Instale as dependências:
 
+Na raiz, onde está o arquivo `docker-compose.yml`, execute:
+
+```bash
+docker compose up -d --build
 ```
+
+O Compose inicia RabbitMQ, Gateway, Processor e frontend.
+
+Acompanhe os logs:
+
+```bash
+docker compose logs -f
+```
+
+Para acompanhar somente o Processor:
+
+```bash
+docker compose logs -f modulo-b
+```
+
+### Endereços
+
+| Serviço | Endereço |
+|---|---|
+| Frontend | http://localhost:4200 |
+| Cadastro de pedidos | `POST http://localhost:8080/pedidos/posicional` |
+| Consulta de pedidos | `GET http://localhost:8081/pedidos` |
+| Painel do RabbitMQ | http://localhost:15672 |
+
+Aguarde a inicialização dos serviços antes de enviar pedidos.
+
+### Encerrar
+
+```bash
+docker compose down
+```
+
+### Limpar os dados locais
+
+Para reiniciar o banco do ambiente Docker:
+
+1. Encerre os serviços com `docker compose down`.
+2. Exclua a pasta `data` da raiz do projeto.
+3. Inicie novamente com `docker compose up -d --build`.
+
+**A exclusão da pasta `data` remove os pedidos armazenados nesse ambiente.**
+
+## 💻 Execução local
+
+### Pré-requisitos
+
+- Java 21.
+- Maven.
+- Node.js em versão compatível com Angular 21 e npm.
+- RabbitMQ disponível na porta `5672`.
+
+Os comandos abaixo partem da pasta do repositório clonado.
+
+### 1. Iniciar o RabbitMQ
+
+Você pode usar somente o serviço de mensageria do Compose:
+
+```bash
+docker compose up -d rabbitmq
+```
+
+Aguarde o RabbitMQ terminar de iniciar antes de executar os backends.
+
+Se o ambiente completo já estiver rodando em Docker, encerre-o antes de iniciar os backends e o frontend localmente, evitando conflitos de portas.
+
+### 2. Iniciar o Gateway
+
+Em um terminal:
+
+```bash
+cd pedido-gateway
+mvn spring-boot:run
+```
+
+### 3. Iniciar o Processor
+
+Em outro terminal, a partir da raiz:
+
+```bash
+cd pedido-processor
+mvn spring-boot:run
+```
+
+Também é possível importar os dois módulos como projetos Maven no IntelliJ IDEA e executar:
+
+- `PedidoGatewayApplication`
+- `PedidoProcessorApplication`
+
+### 4. Iniciar o frontend
+
+Em outro terminal, a partir da raiz:
+
+```bash
+cd pedido-frontend
 npm install
-```
-
-3. Inicie a aplicação
-
-```
 npm run start
 ```
 
-1. Front-end
-* **Acesse http://localhost:4200 no seu navegador.**
+Acesse http://localhost:4200.
 
-2. API de cadastro (POST)
-* **(Gateway)**: `http://localhost:8080/pedidos/posicional`
+## 📝 Formato da entrada
 
-3. API de consulta (GET)
-* **(Processor)**: `http://localhost:8081/pedidos`
+O endpoint de cadastro recebe o corpo como **texto puro**, com:
 
-## ⚙️ Como Executar Usando Docker
-
-1. Pré-requisitos Docker e Docker Compose instalados.
-
-**Portas são as mesmas das de cima**
-
-### Execução via Docker Compose
-
-1. Na raiz do projeto (onde está o arquivo docker-compose.yml), execute o comando:
-
-```
-docker-compose up -d --build
+```text
+Content-Type: text/plain
 ```
 
-2. Acompanhe o processamento em tempo real pelos logs:
+A entrada deve possuir **exatamente 40 caracteres**, respeitando o seguinte layout:
 
+| Campo | Posições | Tamanho | Preenchimento |
+|---|---|---|---|
+| Tipo de lanche | 1 a 10 | 10 | Espaços à direita |
+| Proteína | 11 a 20 | 10 | Espaços à direita |
+| Acompanhamento | 21 a 30 | 10 | Espaços à direita |
+| Quantidade | 31 a 32 | 2 | Zeros à esquerda |
+| Bebida | 33 a 40 | 8 | Espaços à direita |
+
+A quantidade prevista no contrato do desafio vai de `01` a `99`.
+
+**Cuidados ao enviar:**
+
+- Não coloque separadores entre os campos.
+- Preserve os espaços finais da bebida.
+- Não acrescente uma quebra de linha.
+- Envie texto puro, sem envolver a linha em um objeto JSON.
+
+### Decisão sobre preenchimento
+
+O enunciado apresenta orientações diferentes para entradas menores que 40 caracteres: uma menciona completar o preenchimento e outra determina rejeitar.
+
+Nesta implementação, o preenchimento deve ser realizado antes do envio. A API exige exatamente 40 caracteres e rejeita comprimentos diferentes.
+
+## 💰 Regras de preço
+
+| Tipo de lanche | Preço unitário |
+|---|---|
+| `HAMBURGUER` | R$ 20,00 |
+| `PASTEL` | R$ 15,00 |
+| Outros | R$ 12,00 |
+
+O valor total corresponde ao preço unitário multiplicado pela quantidade.
+
+A combinação **HAMBURGUER + CARNE + SALADA** recebe **10% de desconto sobre o total**.
+
+A bebida não altera o preço nas regras deste desafio.
+
+## 🧪 Exemplos de requisição
+
+Nos exemplos visuais abaixo, `·` representa um espaço. **Não envie o caractere `·` na requisição real.**
+
+Os comandos com `printf` são destinados a Bash, Git Bash ou WSL e geram a entrada com os espaços necessários, sem quebra de linha.
+
+### Exemplo 1 — Com desconto
+
+| Campo | Valor |
+|---|---|
+| Tipo de lanche | HAMBURGUER |
+| Proteína | CARNE |
+| Acompanhamento | SALADA |
+| Quantidade | 01 |
+| Bebida | COCA |
+
+Representação visual:
+
+```text
+HAMBURGUERCARNE·····SALADA····01COCA····
 ```
-docker logs -f modulo-b-processor
+
+Envio:
+
+```bash
+printf '%-10s%-10s%-10s%02d%-8s' \
+  'HAMBURGUER' 'CARNE' 'SALADA' 1 'COCA' |
+curl -i http://localhost:8080/pedidos/posicional \
+  -H 'Content-Type: text/plain' \
+  --data-binary @-
 ```
 
-3. Caso queiram limpar o banco de dados basta apagar a pasta data na raiz do projeto e subir a aplicação novamente.
+**Resultado esperado:** HTTP `201 Created`, com JSON do pedido e valor de **R$ 18,00**.
 
+### Exemplo 2 — Sem desconto
+
+| Campo | Valor |
+|---|---|
+| Tipo de lanche | PASTEL |
+| Proteína | FRANGO |
+| Acompanhamento | BACON |
+| Quantidade | 02 |
+| Bebida | SUCO |
+
+Representação visual:
+
+```text
+PASTEL····FRANGO····BACON·····02SUCO····
+```
+
+Envio:
+
+```bash
+printf '%-10s%-10s%-10s%02d%-8s' \
+  'PASTEL' 'FRANGO' 'BACON' 2 'SUCO' |
+curl -i http://localhost:8080/pedidos/posicional \
+  -H 'Content-Type: text/plain' \
+  --data-binary @-
+```
+
+**Resultado esperado:** HTTP `201 Created`, com JSON do pedido e valor de **R$ 30,00**.
+
+### Consultar os pedidos
+
+```bash
+curl http://localhost:8081/pedidos
+```
+
+## ✅ Testes automatizados
+
+Para executar os testes do Gateway:
+
+```bash
+cd pedido-gateway
+mvn test
+```
+
+Para executar os testes do Processor, em outro terminal a partir da raiz:
+
+```bash
+cd pedido-processor
+mvn test
+```
+
+No Gateway, há testes específicos em `PedidoInputTest` e `PedidoServiceTest`. Entre os cenários de cálculo estão:
+
+- Pedido de pastel sem desconto.
+- Pedido de hambúrguer com carne e salada, aplicando 10% de desconto.
+
+Os módulos também possuem testes de carregamento do contexto Spring. Esses testes podem depender das configurações e dos serviços utilizados pela aplicação.
+
+## 🔧 Melhorias previstas
+
+- Validar explicitamente que a quantidade contém dois dígitos e está entre `01` e `99`.
+- Ajustar o teste de quantidade zero para esperar rejeição da entrada.
+- Melhorar o tratamento de entrada nula.
+- Padronizar respostas HTTP para entradas inválidas.
+- Ampliar os testes para comprimentos inválidos e campos numéricos incorretos.
+- Acrescentar testes de integração do fluxo entre persistência e mensageria.
+
+## 📸 Screenshots
+
+### Tela principal — Lista de pedidos
+
+<p align="center">
+  <img src="./docs/main.png" alt="Tela principal com a listagem de pedidos" width="100%">
+</p>
+
+### Pedido recebido — Gateway
+
+<p align="center">
+  <img src="./docs/pedidoRecebido.png" alt="Pedido com status RECEBIDO" width="100%">
+</p>
+
+### Pedido entregue — Processor
+
+<p align="center">
+  <img src="./docs/pedidoEntregue.png" alt="Pedido com status ENTREGUE" width="100%">
+</p>
